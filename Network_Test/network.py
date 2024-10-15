@@ -99,3 +99,27 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
     qc3 = QuantumChannel('qc_r0_m3', tl, quantum_channel_attenuation, quantum_channel_distance)
     qc2.set_ends(r1, m3.name)
     qc3.set_ends(r2, m3.name)
+
+    # Create routing table manually
+    # This table is based on quantum links
+    # Args: name of destination node and the next node
+    # Router0 routes
+    r0.network_manager.protocol_stack[0].add_forwarding_rule("r1", "r1")
+    r0.network_manager.protocol_stack[0].add_forwarding_rule("r2", "r1")
+    r0.network_manager.protocol_stack[0].add_forwarding_rule("r3", "r3")
+    r0.network_manager.protocol_stack[0].add_forwarding_rule("r2", "r3")
+    # Router1 routes
+    r1.network_manager.protocol_stack[0].add_forwarding_rule("r2", "r2")
+    r1.network_manager.protocol_stack[0].add_forwarding_rule("r3", "r2")
+    r1.network_manager.protocol_stack[0].add_forwarding_rule("r0", "r0")
+    r1.network_manager.protocol_stack[0].add_forwarding_rule("r3", "r0")
+    # Router2 routes
+    r2.network_manager.protocol_stack[0].add_forwarding_rule("r3", "r3")
+    r2.network_manager.protocol_stack[0].add_forwarding_rule("r0", "r3")
+    r2.network_manager.protocol_stack[0].add_forwarding_rule("r1", "r1")
+    r2.network_manager.protocol_stack[0].add_forwarding_rule("r0", "r1")
+    # Router3 routes
+    r3.network_manager.protocol_stack[0].add_forwarding_rule("r0", "r0")
+    r3.network_manager.protocol_stack[0].add_forwarding_rule("r1", "r0")
+    r3.network_manager.protocol_stack[0].add_forwarding_rule("r2", "r2")
+    r3.network_manager.protocol_stack[0].add_forwarding_rule("r1", "r2")
