@@ -16,7 +16,7 @@ def kilo_per_meter(kilometers: float) -> float:
     meters = kilometers * 1e3
     return meters
 
-def test(sim_time: int, classical_channel_delay: int, classical_channel_distance: float,
+def simulation(sim_time: int, classical_channel_delay: int, classical_channel_distance: float,
  quantum_channel_attenuation: float, quantum_channel_distance: float):
     """
     sim_time: duration of simulation time (ms)
@@ -78,3 +78,24 @@ def test(sim_time: int, classical_channel_delay: int, classical_channel_distance
             cc = ClassicalChannel("cc_%s_%s"%(node1.name, node2.name), 
                 tl, classical_channel_distance, delay=cc_delay)
             cc.set_ends(node1, node2.name)
+
+    # Create quantum channels linking r0 and r1 to m0
+    qc0 = QuantumChannel('qc_r0_m0', tl, quantum_channel_attenuation, quantum_channel_distance)
+    qc1 = QuantumChannel('qc_r1_m0', tl, quantum_channel_attenuation, quantum_channel_distance)
+    qc0.set_ends(r0, m0.name)
+    qc1.set_ends(r1, m0.name)
+    # Create quantum channels linking r1 and r2 to m1
+    qc2 = QuantumChannel('qc_r1_m1', tl, quantum_channel_attenuation, quantum_channel_distance)
+    qc3 = QuantumChannel('qc_r2_m1', tl, quantum_channel_attenuation, quantum_channel_distance)
+    qc2.set_ends(r1, m1.name)
+    qc3.set_ends(r2, m1.name)
+    # Create quantum channels linking r2 and r3 to m2
+    qc4 = QuantumChannel('qc_r2_m2', tl, quantum_channel_attenuation, quantum_channel_distance)
+    qc5 = QuantumChannel('qc_r3_m2', tl, quantum_channel_attenuation, quantum_channel_distance)
+    qc4.set_ends(r2, m2.name)
+    qc5.set_ends(r3, m2.name)
+    # Create quantum channels linking r3 and r0 to m3
+    qc2 = QuantumChannel('qc_r3_m3', tl, quantum_channel_attenuation, quantum_channel_distance)
+    qc3 = QuantumChannel('qc_r0_m3', tl, quantum_channel_attenuation, quantum_channel_distance)
+    qc2.set_ends(r1, m3.name)
+    qc3.set_ends(r2, m3.name)
