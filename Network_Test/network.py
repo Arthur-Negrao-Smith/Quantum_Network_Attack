@@ -16,8 +16,8 @@ def kilo_per_meter(kilometers: float) -> float:
     meters = kilometers * 1e3
     return meters
 
-def test(sim_time: int, classical_channel_delay: int,
- quantum_channel_attenuation: float, quantum_channel_distance: int):
+def test(sim_time: int, classical_channel_delay: int, classical_channel_distance: float,
+ quantum_channel_attenuation: float, quantum_channel_distance: float):
     """
     sim_time: duration of simulation time (ms)
     classical_channel_delay: delay on classical channels (ms)
@@ -29,6 +29,8 @@ def test(sim_time: int, classical_channel_delay: int,
     cc_delay = mili_per_pico(classical_channel_delay)
     qc_distance = kilo_per_meter(quantum_channel_distance)
     
+    raw_fidelity = 0.85
+
     # Construct the simulation timeline; the constructor argument is the simulation time (ps)
     tl = Timeline(mili_per_pico(sim_time))
 
@@ -64,3 +66,15 @@ def test(sim_time: int, classical_channel_delay: int,
         # Update the coherence time (measured in seconds)
         memory_array.update_memory_params("coherence_time", 10)
         # Similarly update the fidelity of entanglement of the memories
+        memory_array.update_memory_params("raw_fidelity", raw_fidelity)
+
+    # create all-to-all classical connections
+    for node1 in nodes:
+        for node2 in nodes:
+            if node1 == node2:
+                continue
+            # construct a classical communication channel
+            # Args: name, timeline, length (in m), delay (in ps)
+            cc = ClassicalChannel("cc_%s_%s"%(node1.name, node2.name), 
+                tl, classical_channel_distance, delay=cc_delay)
+            cc.set_ends(node1, node2.name)
