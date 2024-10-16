@@ -1,4 +1,5 @@
 # Basic imports
+# from ipywidgets import interact
 from matplotlib import pyplot as plt
 import time
 
@@ -29,6 +30,22 @@ def plotEntangleMemories(router: QuantumRouter, label: str, ax_type: str, data: 
         else:
             ax.set_ylabel(label)
     return data, ax
+
+def displayMemoryFidelity(router: QuantumRouter, label: str, ax_type: str, ax: 'Axes', raw_fidelity: float) -> None:
+    data = []
+    for info in router.resource_manager.memory_manager:
+        data.append(info.fidelity)
+    ax.bar(range(len(data)), data)
+    ax.plot([0, len(data)], [raw_fidelity, raw_fidelity], "k--")
+    ax.plot([0, len(data)], [0.9, 0.9], "k--")
+    ax.set_ylim(0.7,1)
+    ax.set_title(router.name)
+    if label:
+        if ax_type == 'x':
+            ax.set_xlabel(label)
+        else:
+            ax.set_ylabel(label)
+
 
 def simulation(sim_time: int, classical_channel_delay: int, classical_channel_distance: float,
  quantum_channel_attenuation: float, quantum_channel_distance: float):
@@ -165,4 +182,16 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
     fig.tight_layout()
 
     ## Display metrics for memory fidelities
-    
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    fig.set_size_inches(12, 5)
+
+    # display collected metric for memory fidelities on r1
+    # in this case, a bar chart of memory fidelity at each index
+    displayMemoryFidelity(r0, 'Fidelity', 'y', ax1, raw_fidelity)
+    displayMemoryFidelity(r1, 'Memory Number', 'x', ax2, raw_fidelity)
+    displayMemoryFidelity(r2, None, None, ax3, raw_fidelity)
+
+    fig.tight_layout()
+
+# interactive_plot = interact(test, sim_time=(2000, 4000, 500), cc_delay=(0.1, 1, 0.1), qc_atten=[1e-5, 2e-5, 3e-5], qc_dist=(1, 10, 1))
+# interactive_plot()
