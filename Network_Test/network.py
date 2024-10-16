@@ -193,5 +193,5 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
 
     fig.tight_layout()
 
-# interactive_plot = interact(test, sim_time=(2000, 4000, 500), cc_delay=(0.1, 1, 0.1), qc_atten=[1e-5, 2e-5, 3e-5], qc_dist=(1, 10, 1))
+# interactive_plot = interact(simulation, sim_time=(2000, 4000, 500), cc_delay=(0.1, 1, 0.1), qc_atten=[1e-5, 2e-5, 3e-5], qc_dist=(1, 10, 1))
 # interactive_plot()
