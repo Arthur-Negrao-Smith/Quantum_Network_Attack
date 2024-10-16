@@ -107,19 +107,27 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
     r0.network_manager.protocol_stack[0].add_forwarding_rule("r1", "r1")
     r0.network_manager.protocol_stack[0].add_forwarding_rule("r2", "r1")
     r0.network_manager.protocol_stack[0].add_forwarding_rule("r3", "r3")
-    r0.network_manager.protocol_stack[0].add_forwarding_rule("r2", "r3")
     # Router1 routes
     r1.network_manager.protocol_stack[0].add_forwarding_rule("r2", "r2")
     r1.network_manager.protocol_stack[0].add_forwarding_rule("r3", "r2")
     r1.network_manager.protocol_stack[0].add_forwarding_rule("r0", "r0")
-    r1.network_manager.protocol_stack[0].add_forwarding_rule("r3", "r0")
     # Router2 routes
     r2.network_manager.protocol_stack[0].add_forwarding_rule("r3", "r3")
     r2.network_manager.protocol_stack[0].add_forwarding_rule("r0", "r3")
     r2.network_manager.protocol_stack[0].add_forwarding_rule("r1", "r1")
-    r2.network_manager.protocol_stack[0].add_forwarding_rule("r0", "r1")
     # Router3 routes
     r3.network_manager.protocol_stack[0].add_forwarding_rule("r0", "r0")
     r3.network_manager.protocol_stack[0].add_forwarding_rule("r1", "r0")
     r3.network_manager.protocol_stack[0].add_forwarding_rule("r2", "r2")
-    r3.network_manager.protocol_stack[0].add_forwarding_rule("r1", "r2")
+
+    ## Run simulation
+    tl.init()
+    
+    # We use the network manager of an end router to make our entanglement request
+    # Args: 
+    # destination node, 
+    # start time (ps) of entanglement, 
+    # end time (ps) of entanglement, 
+    # number of memories to entangle,
+    # desired fidelity of entanglement
+    
