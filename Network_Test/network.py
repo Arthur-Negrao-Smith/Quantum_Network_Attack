@@ -130,4 +130,13 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
     # end time (ps) of entanglement, 
     # number of memories to entangle,
     # desired fidelity of entanglement
-    
+    r1.network_manager.request('r3', 1e12, 1e13, 50, 0.9)
+
+    tick = time.time()
+    tl.run()
+    print("execution time %.2f sec" % (time.time() - tick))
+
+    ## Display metrics for entangled memories
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    fig.set_siza_inches(12, 5)
