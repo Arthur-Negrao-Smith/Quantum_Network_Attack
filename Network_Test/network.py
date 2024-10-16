@@ -16,6 +16,16 @@ def kilo_per_meter(kilometers: float) -> float:
     meters = kilometers * 1e3
     return meters
 
+def plotEntangleMemories(router: QuantumRouter, label: str, data: list, ax: 'Axes') -> [list, 'Axes']:
+    for info in router.resource_manager.memory_manager:
+        if info.entangle_time > 0:
+            data.append(info.entangle_time / 1e12)
+    data.sort()
+    ax.plot(data, range(1, len(data) + 1), marker="o")
+    ax.set_title(router.name)
+    ax.set_ylabel(label)
+    return data, ax
+
 def simulation(sim_time: int, classical_channel_delay: int, classical_channel_distance: float,
  quantum_channel_attenuation: float, quantum_channel_distance: float):
     """
@@ -130,7 +140,7 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
     # end time (ps) of entanglement, 
     # number of memories to entangle,
     # desired fidelity of entanglement
-    r1.network_manager.request('r3', 1e12, 1e13, 50, 0.9)
+    r0.network_manager.request('r2', 1e12, 1e13, 50, 0.9)
 
     tick = time.time()
     tl.run()
@@ -140,3 +150,10 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
     fig.set_siza_inches(12, 5)
+
+    # Entangled memories on r0
+    # Plot number of entangled memories versus time for r0
+    data = []
+    data, ax1 = plotEntangleMemories(r0, "Number of Entangled Memories", data, ax1)
+    data, ax2 = plotEntangleMemories(r1, "Simulation Time (s)", data, ax2)
+    data, ax3 = plotEntangleMemories(r2, "Number of Entangled Memories", data, ax3)
