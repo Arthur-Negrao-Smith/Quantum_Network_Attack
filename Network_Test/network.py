@@ -1,7 +1,6 @@
-# Basic imports
-# from ipywidgets import interact
 from matplotlib import pyplot as plt
 import time
+from ipywidgets import interact
 
 # Importing sequence structures
 from sequence.kernel.timeline import Timeline
@@ -9,15 +8,16 @@ from sequence.topology.node import QuantumRouter, BSMNode
 from sequence.components.optical_channel import (QuantumChannel,
                                              ClassicalChannel)
 
-def mili_per_pico(miliseconds: float) -> float:
+def mili_to_pico(miliseconds: float) -> float:
     picoseconds = miliseconds * 1e9
     return picoseconds
 
-def kilo_per_meter(kilometers: float) -> float:
+def kilo_to_meter(kilometers: float) -> float:
     meters = kilometers * 1e3
     return meters
 
-def plotEntangleMemories(router: QuantumRouter, label: str, ax_type: str, data: list, ax: 'Axes') -> [list, 'Axes']:
+def plotEntangleMemories(router: QuantumRouter, label: str, ax_type: str, ax: 'Axes') -> None:
+    data = []
     for info in router.resource_manager.memory_manager:
         if info.entangle_time > 0:
             data.append(info.entangle_time / 1e12)
@@ -29,7 +29,6 @@ def plotEntangleMemories(router: QuantumRouter, label: str, ax_type: str, data: 
             ax.set_xlabel(label)
         else:
             ax.set_ylabel(label)
-    return data, ax
 
 def displayMemoryFidelity(router: QuantumRouter, label: str, ax_type: str, ax: 'Axes', raw_fidelity: float) -> None:
     data = []
@@ -47,32 +46,31 @@ def displayMemoryFidelity(router: QuantumRouter, label: str, ax_type: str, ax: '
             ax.set_ylabel(label)
 
 
-def simulation(sim_time: int, classical_channel_delay: int, classical_channel_distance: float,
- quantum_channel_attenuation: float, quantum_channel_distance: float):
+def simulation(sim_time, cc_delay, qc_atten, qc_dist):
     """
     sim_time: duration of simulation time (ms)
-    classical_channel_delay: delay on classical channels (ms)
-    quantum_channel_attenuation: attenuation on quantum channels (dB/m) 
-    quantum_channel_distance: distance of quantum channels (km)
+    cc_delay: delay on classical channels (ms)
+    qc_atten: attenuation on quantum channels (dB/m)
+    qc_dist: distance of quantum channels (km)
     """
 
     # Convert units
-    cc_delay = mili_per_pico(classical_channel_delay)
-    qc_distance = kilo_per_meter(quantum_channel_distance)
-    
+    cc_delay = mili_to_pico(cc_delay)
+    qc_distance = kilo_to_meter(qc_dist)
+
     raw_fidelity = 0.85
 
     # Construct the simulation timeline; the constructor argument is the simulation time (ps)
-    tl = Timeline(mili_per_pico(sim_time))
+    tl = Timeline(mili_to_pico(sim_time))
 
     ## Create our quantum network
 
     # Quantum routers
     # Args: name, timeline, number of quantum memories
     r0 = QuantumRouter('r0', tl, 50)
-    r1 = QuantumRouter('r1', tl, 50)
+    r1 = QuantumRouter('r1', tl, 100)
     r2 = QuantumRouter('r2', tl, 50)
-    r3 = QuantumRouter('r3', tl, 50)
+    r3 = QuantumRouter('r3', tl, 100)
 
     # Create BSM nodes
     m0 = BSMNode('m0', tl, ['r0', 'r1'])
@@ -80,10 +78,14 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
     m2 = BSMNode('m2', tl, ['r2', 'r3'])
     m3 = BSMNode('m3', tl, ['r3', 'r0'])
 
-    # Create connection among router and BSM
+    # Create connection between router and BSM
+    r0.add_bsm_node(m3.name, r3.name)
     r0.add_bsm_node(m0.name, r1.name)
+    r1.add_bsm_node(m0.name, r0.name)
     r1.add_bsm_node(m1.name, r2.name)
+    r2.add_bsm_node(m1.name, r1.name)
     r2.add_bsm_node(m2.name, r3.name)
+    r3.add_bsm_node(m2.name, r2.name)
     r3.add_bsm_node(m3.name, r0.name)
 
     # set seeds for random generators
@@ -91,8 +93,7 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
     for i, node in enumerate(nodes):
         node.set_seed(i)
 
-    nodes = [r0, r1, r2, r3]
-    for node in nodes:
+    for node in [r0, r1, r2, r3]:
         memory_array = node.get_components_by_type("MemoryArray")[0]
         # Update the coherence time (measured in seconds)
         memory_array.update_memory_params("coherence_time", 10)
@@ -101,35 +102,34 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
 
     # create all-to-all classical connections
     for node1 in nodes:
-        for node2 in nodes:
-            if node1 == node2:
-                continue
-            # construct a classical communication channel
-            # Args: name, timeline, length (in m), delay (in ps)
-            cc = ClassicalChannel("cc_%s_%s"%(node1.name, node2.name), 
-                tl, classical_channel_distance, delay=cc_delay)
-            cc.set_ends(node1, node2.name)
+      for node2 in nodes:
+        if node1 == node2:
+          continue
+        # construct a classical communication channel
+        # Args: name, timeline, length (in m), delay (in ps)
+        cc = ClassicalChannel("cc_%s_%s"%(node1.name, node2.name), tl, 1e3, delay=cc_delay)
+        cc.set_ends(node1, node2.name)
 
     # Create quantum channels linking r0 and r1 to m0
-    qc0 = QuantumChannel('qc_r0_m0', tl, quantum_channel_attenuation, quantum_channel_distance)
-    qc1 = QuantumChannel('qc_r1_m0', tl, quantum_channel_attenuation, quantum_channel_distance)
+    qc0 = QuantumChannel("qc_r0_m0", tl, qc_atten, qc_dist)
+    qc1 = QuantumChannel('qc_r1_m0', tl, qc_atten, qc_dist)
     qc0.set_ends(r0, m0.name)
     qc1.set_ends(r1, m0.name)
     # Create quantum channels linking r1 and r2 to m1
-    qc2 = QuantumChannel('qc_r1_m1', tl, quantum_channel_attenuation, quantum_channel_distance)
-    qc3 = QuantumChannel('qc_r2_m1', tl, quantum_channel_attenuation, quantum_channel_distance)
+    qc2 = QuantumChannel('qc_r1_m1', tl, qc_atten, qc_dist)
+    qc3 = QuantumChannel('qc_r2_m1', tl, qc_atten, qc_dist)
     qc2.set_ends(r1, m1.name)
     qc3.set_ends(r2, m1.name)
     # Create quantum channels linking r2 and r3 to m2
-    qc4 = QuantumChannel('qc_r2_m2', tl, quantum_channel_attenuation, quantum_channel_distance)
-    qc5 = QuantumChannel('qc_r3_m2', tl, quantum_channel_attenuation, quantum_channel_distance)
+    qc4 = QuantumChannel('qc_r2_m2', tl, qc_atten, qc_dist)
+    qc5 = QuantumChannel('qc_r3_m2', tl, qc_atten, qc_dist)
     qc4.set_ends(r2, m2.name)
     qc5.set_ends(r3, m2.name)
     # Create quantum channels linking r3 and r0 to m3
-    qc2 = QuantumChannel('qc_r3_m3', tl, quantum_channel_attenuation, quantum_channel_distance)
-    qc3 = QuantumChannel('qc_r0_m3', tl, quantum_channel_attenuation, quantum_channel_distance)
-    qc2.set_ends(r1, m3.name)
-    qc3.set_ends(r2, m3.name)
+    qc6 = QuantumChannel('qc_r3_m3', tl, qc_atten, qc_dist)
+    qc7 = QuantumChannel('qc_r0_m3', tl, qc_atten, qc_dist)
+    qc6.set_ends(r3, m3.name)
+    qc7.set_ends(r0, m3.name)
 
     # Create routing table manually
     # This table is based on quantum links
@@ -153,15 +153,15 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
 
     ## Run simulation
     tl.init()
-    
+
     # We use the network manager of an end router to make our entanglement request
-    # Args: 
-    # destination node, 
-    # start time (ps) of entanglement, 
-    # end time (ps) of entanglement, 
+    # Args:
+    # destination node,
+    # start time (ps) of entanglement,
+    # end time (ps) of entanglement,
     # number of memories to entangle,
     # desired fidelity of entanglement
-    r0.network_manager.request('r2', 1e12, 1e13, 50, 0.9)
+    r0.network_manager.request('r2', 1e12, 1e14, 50, 0.9)
 
     tick = time.time()
     tl.run()
@@ -170,14 +170,13 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
     ## Display metrics for entangled memories
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
-    fig.set_siza_inches(12, 5)
+    fig.set_size_inches(12, 5)
 
     # Entangled memories on r0
     # Plot number of entangled memories versus time for r0
-    data = []
-    data, ax1 = plotEntangleMemories(r0, "Number of Entangled Memories", 'y', data, ax1)
-    data, ax2 = plotEntangleMemories(r1, "Simulation Time (s)", 'x', data, ax2)
-    data, ax3 = plotEntangleMemories(r2, None, None, data, ax3)
+    plotEntangleMemories(r0, "Number of Entangled Memories", 'y', ax1)
+    plotEntangleMemories(r1, "Simulation Time (s)", 'x', ax2)
+    plotEntangleMemories(r2, None, None, ax3)
 
     fig.tight_layout()
 
@@ -191,7 +190,8 @@ def simulation(sim_time: int, classical_channel_delay: int, classical_channel_di
     displayMemoryFidelity(r1, 'Memory Number', 'x', ax2, raw_fidelity)
     displayMemoryFidelity(r2, None, None, ax3, raw_fidelity)
 
+
     fig.tight_layout()
 
-# interactive_plot = interact(simulation, sim_time=(2000, 4000, 500), cc_delay=(0.1, 1, 0.1), qc_atten=[1e-5, 2e-5, 3e-5], qc_dist=(1, 10, 1))
-# interactive_plot()
+interactive_plot = interact(simulation, sim_time=(2000, 4000, 500), cc_delay=(0.1, 1, 0.1), qc_atten=[1e-5, 2e-5, 3e-5], qc_dist=(1, 10, 1))
+interactive_plot
