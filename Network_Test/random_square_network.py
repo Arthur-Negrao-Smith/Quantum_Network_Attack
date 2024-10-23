@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import time
-from ipywidgets import interact
+from random_node import choiceNode
+# from ipywidgets import interact
 from random import randint
 
 # Importing sequence structures
@@ -46,28 +47,6 @@ def displayMemoryFidelity(router: QuantumRouter, label: str, ax_type: str, ax: '
         else:
             ax.set_ylabel(label)
 
-def choiceNode(nodes: list, choice_node: int = None) -> list:
-    """
-        It will choose one of the network nodes according to the 
-        chosen and random number if it does not determine a node
-    """
-    choice_node = choice_node
-    if choice_node == None:
-        from random import randint
-        choice_node = randint(0, len(nodes) - 1)
-    
-    if len(nodes) - choice_node == 2:
-        aux = [nodes[choice_node], nodes[choice_node + 1], nodes[0]]
-        print(f"Caso == 2: {aux}")
-        return aux
-    elif len(nodes) - choice_node == 1:
-        aux = [nodes[choice_node], nodes[0], nodes[1]]
-        print(f"Caso == 1: {aux}")
-        return aux
-    else:
-        aux = [nodes[choice_node], nodes[choice_node+1], nodes[choice_node+2]]
-        print(f"Caso genérico: {aux}")
-        return aux
 
 def simulation(sim_time, cc_delay, qc_atten, qc_dist):
     """
@@ -218,5 +197,7 @@ def simulation(sim_time, cc_delay, qc_atten, qc_dist):
 
     fig.tight_layout()
 
-interactive_plot = interact(simulation, sim_time=(2000, 4000, 500), cc_delay=(0.1, 1, 0.1), qc_atten=[1e-5, 2e-5, 3e-5], qc_dist=(1, 10, 1))
-interactive_plot
+# interactive_plot = interact(simulation, sim_time=(2000, 4000, 500), cc_delay=(0.1, 1, 0.1), qc_atten=[1e-5, 2e-5, 3e-5], qc_dist=(1, 10, 1))
+# interactive_plot
+simulation(sim_time=2000, cc_delay=0.1, qc_atten=3e-5, qc_dist=1)
+plt.show()
