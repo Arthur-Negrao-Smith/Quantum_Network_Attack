@@ -209,8 +209,6 @@ def simulation(sim_time: int, cc_delay: float, qc_atten: float, qc_dist: int, sw
     nodes = [r0, r1, r2, r3]
     nodes_list = choiceNode(nodes)
     
-    network_attack = NewNetworkManager(nodes_list[2], nodes_list[2].memo_arr_name, 0.05)
-
     # We use the network manager of an end router to make our entanglement request
     # Args:
     # destination node,
@@ -246,7 +244,6 @@ def simulation(sim_time: int, cc_delay: float, qc_atten: float, qc_dist: int, sw
     displayMemoryFidelity(nodes_list[0], 'Fidelity', 'y', ax1, raw_fidelity)
     displayMemoryFidelity(nodes_list[1], 'Memory Number', 'x', ax2, raw_fidelity)
     displayMemoryFidelity(nodes_list[2], None, None, ax3, raw_fidelity)
-
 
     fig.tight_layout()
 
